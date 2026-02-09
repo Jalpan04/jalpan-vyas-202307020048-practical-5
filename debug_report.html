@@ -1,0 +1,355 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head><title>Report</title>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+    body { font-family: 'Roboto', sans-serif; max-width: 800px; margin: 0 auto; padding: 40px; }
+    img { max-width: 100%; border: 1px solid #ddd; display: block; margin: 10px 0; }
+    code { background: #f4f4f4; padding: 2px 5px; }
+    pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
+</style>
+</head>
+    <body>
+        <p><strong>NAME:</strong> Jalpan Vyas<br><strong>SUBJECT:</strong> FSD<br><strong>KUID:</strong> 202307020048  </p>
+<hr>
+<h1>Practical: 5</h1>
+<p><strong>Aim:</strong><br>Build backend technologies for an e-commerce application:</p>
+<ul>
+<li>Create REST APIs for <code>/products</code>, <code>/users</code>, <code>/cart</code>, <code>/orders</code>.</li>
+<li>Implement data validation and middleware for requests.</li>
+<li>Add server-side error handling.</li>
+</ul>
+<hr>
+<h1>Theory</h1>
+<h2>1. What is a REST API?</h2>
+<p><strong>REST (Representational State Transfer)</strong> is an architectural style for designing networked applications. A REST API uses HTTP methods to perform CRUD operations:</p>
+<table>
+<thead>
+<tr>
+<th>HTTP Method</th>
+<th>Operation</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET</td>
+<td>Read</td>
+<td>Get all products</td>
+</tr>
+<tr>
+<td>POST</td>
+<td>Create</td>
+<td>Add new product</td>
+</tr>
+<tr>
+<td>PUT/PATCH</td>
+<td>Update</td>
+<td>Update product details</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td>Delete</td>
+<td>Remove product</td>
+</tr>
+</tbody></table>
+<p><strong>Key Principles:</strong></p>
+<ul>
+<li><strong>Stateless</strong>: Each request is independent</li>
+<li><strong>Resource-based</strong>: URLs represent resources (e.g., <code>/api/products</code>)</li>
+<li><strong>JSON format</strong>: Data exchange in JSON</li>
+</ul>
+<hr>
+<h2>2. Express.js Framework</h2>
+<p><strong>Express.js</strong> is a minimal Node.js web framework for building web applications and APIs.</p>
+<p><strong>Key Features:</strong></p>
+<ul>
+<li>Routing system for handling HTTP requests</li>
+<li>Middleware support for request processing</li>
+<li>Easy integration with databases and templating engines</li>
+</ul>
+<pre><code class="language-javascript">const express = require(&#39;express&#39;);
+const app = express();
+app.get(&#39;/api/products&#39;, (req, res) =&gt; {
+    res.json({ products: [...] });
+});
+</code></pre>
+<hr>
+<h2>3. Middleware</h2>
+<p><strong>Middleware</strong> functions execute during the request-response cycle. They can:</p>
+<ul>
+<li>Execute code</li>
+<li>Modify request/response objects</li>
+<li>End the request-response cycle</li>
+<li>Call the next middleware</li>
+</ul>
+<p><strong>Types of Middleware Used:</strong></p>
+<ol>
+<li><strong>Morgan</strong>: HTTP request logger</li>
+<li><strong>CORS</strong>: Cross-Origin Resource Sharing</li>
+<li><strong>express.json()</strong>: Parse JSON request bodies</li>
+<li><strong>Custom Validator</strong>: Validate input using Joi</li>
+</ol>
+<hr>
+<h2>4. Data Validation with Joi</h2>
+<p><strong>Joi</strong> is a schema validation library. It ensures incoming data meets required formats before processing.</p>
+<pre><code class="language-javascript">const schema = Joi.object({
+    email: Joi.string().email().required(),
+    password: Joi.string().min(6).required()
+});
+
+const { error } = schema.validate(req.body);
+if (error) return res.status(400).json({ error: error.message });
+</code></pre>
+<hr>
+<h2>5. Error Handling</h2>
+<p><strong>Centralized error handling</strong> ensures consistent error responses across all endpoints.</p>
+<pre><code class="language-javascript">const errorHandler = (err, req, res, next) =&gt; {
+    res.status(err.statusCode || 500).json({
+        success: false,
+        error: err.message
+    });
+};
+</code></pre>
+<hr>
+<h1>Program</h1>
+<h2>Backend Code</h2>
+<h3>1. server.js (Main Entry Point)</h3>
+<pre><code class="language-javascript">const express = require(&#39;express&#39;);
+const cors = require(&#39;cors&#39;);
+const morgan = require(&#39;morgan&#39;);
+
+const productRoutes = require(&#39;./routes/products&#39;);
+const userRoutes = require(&#39;./routes/users&#39;);
+const cartRoutes = require(&#39;./routes/cart&#39;);
+const orderRoutes = require(&#39;./routes/orders&#39;);
+const errorHandler = require(&#39;./middleware/errorHandler&#39;);
+
+const app = express();
+const PORT = 3000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(morgan(&#39;dev&#39;));
+
+// Routes
+app.use(&#39;/api/products&#39;, productRoutes);
+app.use(&#39;/api/users&#39;, userRoutes);
+app.use(&#39;/api/cart&#39;, cartRoutes);
+app.use(&#39;/api/orders&#39;, orderRoutes);
+
+// Error Handler
+app.use(errorHandler);
+
+app.listen(PORT, () =&gt; {
+    console.log(`Server running on port ${PORT}`);
+});
+</code></pre>
+<h3>2. routes/products.js</h3>
+<pre><code class="language-javascript">const express = require(&#39;express&#39;);
+const router = express.Router();
+
+let products = [
+    { id: 1, name: &#39;VOLT Original&#39;, price: 149, image: &#39;volt_original_can.png&#39;, category: &#39;Classic&#39; },
+    { id: 2, name: &#39;VOLT Zero&#39;, price: 159, image: &#39;volt_zero_can.png&#39;, category: &#39;Sugar-Free&#39; },
+    { id: 3, name: &#39;VOLT Tropical&#39;, price: 169, image: &#39;volt_tropical_can.png&#39;, category: &#39;Flavored&#39; }
+];
+
+// GET all products
+router.get(&#39;/&#39;, (req, res) =&gt; {
+    res.json({ success: true, data: products });
+});
+
+// GET single product
+router.get(&#39;/:id&#39;, (req, res) =&gt; {
+    const product = products.find(p =&gt; p.id === parseInt(req.params.id));
+    if (!product) return res.status(404).json({ error: &#39;Not found&#39; });
+    res.json({ success: true, data: product });
+});
+
+// POST new product
+router.post(&#39;/&#39;, (req, res) =&gt; {
+    const newProduct = { id: products.length + 1, ...req.body };
+    products.push(newProduct);
+    res.status(201).json({ success: true, data: newProduct });
+});
+
+module.exports = router;
+</code></pre>
+<h3>3. routes/users.js</h3>
+<pre><code class="language-javascript">const express = require(&#39;express&#39;);
+const router = express.Router();
+
+let users = [];
+
+// POST register
+router.post(&#39;/register&#39;, (req, res) =&gt; {
+    const { name, email, password } = req.body;
+    const newUser = { id: users.length + 1, name, email, password };
+    users.push(newUser);
+    res.status(201).json({ success: true, message: &#39;User registered&#39; });
+});
+
+// POST login
+router.post(&#39;/login&#39;, (req, res) =&gt; {
+    const { email, password } = req.body;
+    const user = users.find(u =&gt; u.email === email &amp;&amp; u.password === password);
+    if (!user) return res.status(401).json({ error: &#39;Invalid credentials&#39; });
+    res.json({ success: true, token: &#39;demo-token-&#39; + user.id });
+});
+
+module.exports = router;
+</code></pre>
+<h3>4. routes/cart.js</h3>
+<pre><code class="language-javascript">const express = require(&#39;express&#39;);
+const router = express.Router();
+
+let carts = { 1: [] };
+
+// GET cart
+router.get(&#39;/&#39;, (req, res) =&gt; {
+    res.json({ success: true, data: carts[1] });
+});
+
+// POST add to cart
+router.post(&#39;/&#39;, (req, res) =&gt; {
+    const { productId, quantity } = req.body;
+    carts[1].push({ productId, quantity });
+    res.status(201).json({ success: true, data: carts[1] });
+});
+
+// DELETE from cart
+router.delete(&#39;/:productId&#39;, (req, res) =&gt; {
+    carts[1] = carts[1].filter(i =&gt; i.productId !== parseInt(req.params.productId));
+    res.json({ success: true, data: carts[1] });
+});
+
+module.exports = router;
+</code></pre>
+<h3>5. routes/orders.js</h3>
+<pre><code class="language-javascript">const express = require(&#39;express&#39;);
+const router = express.Router();
+
+let orders = [];
+
+// POST place order
+router.post(&#39;/&#39;, (req, res) =&gt; {
+    const { items, shippingAddress } = req.body;
+    const order = { id: orders.length + 1, items, shippingAddress, status: &#39;confirmed&#39; };
+    orders.push(order);
+    res.status(201).json({ success: true, data: order });
+});
+
+// GET orders
+router.get(&#39;/&#39;, (req, res) =&gt; {
+    res.json({ success: true, data: orders });
+});
+
+module.exports = router;
+</code></pre>
+<h3>6. middleware/validator.js</h3>
+<pre><code class="language-javascript">const Joi = require(&#39;joi&#39;);
+
+const userSchema = Joi.object({
+    name: Joi.string().min(2).required(),
+    email: Joi.string().email().required(),
+    password: Joi.string().min(6).required()
+});
+
+const validate = (schema) =&gt; (req, res, next) =&gt; {
+    const { error } = schema.validate(req.body);
+    if (error) return res.status(400).json({ error: error.details[0].message });
+    next();
+};
+
+module.exports = { validateUser: validate(userSchema) };
+</code></pre>
+<h3>7. middleware/errorHandler.js</h3>
+<pre><code class="language-javascript">const errorHandler = (err, req, res, next) =&gt; {
+    console.error(&#39;Error:&#39;, err.message);
+    res.status(err.statusCode || 500).json({
+        success: false,
+        error: err.message || &#39;Internal Server Error&#39;
+    });
+};
+
+module.exports = errorHandler;
+</code></pre>
+<hr>
+<h2>Frontend Code</h2>
+<h3>1. index.html</h3>
+<pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;title&gt;VOLT Energy | Power Your Life&lt;/title&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;style.css&quot;&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;nav class=&quot;navbar&quot;&gt;
+        &lt;div class=&quot;logo&quot;&gt;VOLT&lt;span&gt;ENERGY&lt;/span&gt;&lt;/div&gt;
+        &lt;ul class=&quot;nav-links&quot;&gt;
+            &lt;li&gt;&lt;a href=&quot;#hero&quot;&gt;Home&lt;/a&gt;&lt;/li&gt;
+            &lt;li&gt;&lt;a href=&quot;#products&quot;&gt;Products&lt;/a&gt;&lt;/li&gt;
+            &lt;li&gt;&lt;a href=&quot;login.html&quot;&gt;Login&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;div class=&quot;cart-icon&quot;&gt;Cart &lt;span id=&quot;cart-count&quot;&gt;0&lt;/span&gt;&lt;/div&gt;
+    &lt;/nav&gt;
+    
+    &lt;section id=&quot;hero&quot; class=&quot;hero&quot;&gt;
+        &lt;h1&gt;UNLEASH YOUR &lt;span&gt;POWER&lt;/span&gt;&lt;/h1&gt;
+        &lt;p&gt;Premium energy drinks for peak performance&lt;/p&gt;
+        &lt;a href=&quot;#products&quot; class=&quot;btn-primary&quot;&gt;Shop Now&lt;/a&gt;
+    &lt;/section&gt;
+    
+    &lt;section id=&quot;products&quot;&gt;
+        &lt;h2&gt;Our Products&lt;/h2&gt;
+        &lt;div class=&quot;product-grid&quot; id=&quot;product-grid&quot;&gt;&lt;/div&gt;
+    &lt;/section&gt;
+    
+    &lt;script src=&quot;script.js&quot;&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<h3>2. script.js (API Integration)</h3>
+<pre><code class="language-javascript">const API_BASE = &#39;http://localhost:3000/api&#39;;
+let cart = [];
+
+// Load products from API
+async function loadProducts() {
+    const response = await fetch(`${API_BASE}/products`);
+    const result = await response.json();
+    displayProducts(result.data);
+}
+
+function displayProducts(products) {
+    const productGrid = document.getElementById(&#39;product-grid&#39;);
+    productGrid.innerHTML = products.map(product =&gt; `
+        &lt;div class=&quot;product-card&quot;&gt;
+            &lt;div class=&quot;product-image&quot;&gt;
+                &lt;img src=&quot;images/${product.image || &#39;volt-original.svg&#39;}&quot; alt=&quot;${product.name}&quot; style=&quot;height: 100%; width: auto;&quot;&gt;
+            &lt;/div&gt;
+            &lt;!-- ... info ... --&gt;
+        &lt;/div&gt;
+    `).join(&#39;&#39;);
+}
+
+document.addEventListener(&#39;DOMContentLoaded&#39;, loadProducts);
+</code></pre>
+<hr>
+<h1>Screenshots</h1>
+<h3>1. Website Homepage</h3>
+<p><img src="file:///C:/Users/acer/Desktop/collage material/frontend assiments/Practical5/screenshots/01_homepage.png" alt="Homepage"></p>
+<h3>2. Products Section</h3>
+<p><img src="file:///C:/Users/acer/Desktop/collage material/frontend assiments/Practical5/screenshots/02_products.png" alt="Products"></p>
+<h3>3. Login Page</h3>
+<p><img src="file:///C:/Users/acer/Desktop/collage material/frontend assiments/Practical5/screenshots/03_login.png" alt="Login"></p>
+<h3>4. API Response - GET /products</h3>
+<p><img src="file:///C:/Users/acer/Desktop/collage material/frontend assiments/Practical5/screenshots/04_api_products.png" alt="API Products"></p>
+<h3>5. API Root</h3>
+<p><img src="file:///C:/Users/acer/Desktop/collage material/frontend assiments/Practical5/screenshots/05_api_root.png" alt="API Root"></p>
+
+    </body>
+    </html>
+    

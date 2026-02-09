@@ -363,6 +363,10 @@ document.addEventListener('DOMContentLoaded', loadProducts);
 ### 4. API Response - GET /products
 ![API Products](screenshots/04_api_products.png)
 
+### 5. API Root
+![API Root](screenshots/05_api_root.png)
+
+
 
 
 
